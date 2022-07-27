@@ -1,13 +1,17 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <cmath>
 
 using my_float = float;
 
 auto pi_taylor(size_t steps) -> my_float {
+    float piCalc = 0;
+    for(int i = 0; i < steps; i++) {
+        piCalc += 4*pow(-1,i)/(2*i +1);
+    }
 
-    // please complete
-
+    return piCalc;
 }
 
 int main(int argc, const char *argv[]) {
