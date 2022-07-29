@@ -24,10 +24,13 @@ tid_time time_ms(F f, Args &&...args) {
 }
 
 auto pi_taylor(size_t steps) -> my_float {
-  float piCalc = 0;
+  my_float piCalc = 0.0f;
+  int sign = 1;
   for (int i = 0; i < steps; i++) {
-    piCalc += 4 * pow(-1, i) / (2 * i + 1);
+    piCalc += sign / static_cast<my_float>(2 * i + 1);
+    sign = -sign;
   }
+  piCalc *= 4.0f;
 
   std::cout << "For " << steps << ", pi value: "
             << std::setprecision(std::numeric_limits<long double>::digits10 + 1)

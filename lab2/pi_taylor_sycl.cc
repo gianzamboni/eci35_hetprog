@@ -26,24 +26,33 @@ time_ms(F f, Args &&...args) {
   return std::make_pair(tid, ex_time);
 }
 
-auto pi_taylor_step(int steps, std::vector<float> &stepResults) -> void {
+auto pi_taylor_step(int steps, std::vector<float> &stepResults, int work_group_size) -> void {
   queue q;
   auto R = range<1>(steps);
   buffer stepsBuf(stepResults);
   q.submit([&](handler &h) {
     accessor s(stepsBuf, h);
-    h.parallel_for(R, [=](auto i) {
-      s[i] = 4 * pow(-1, i) / (2 * i + 1);
+    my_float acc = 0.0f;
+    int sign = 0;
+    h.parallel_for(work_group_size, [=](auto i) {
+      sign = i & 0x1 ? -1 : 1;
+      for (int j = i; j < steps; j += work_group_size) {
+        acc += sign / static_cast<my_float>(2 * i + 1);
+        sign = -sign;
+      }
+      s[i] = 4 * acc;
+      // partial_sums[i] = acc;
     });
   });
 }
 
-void calcPi(int steps) {
+void calcPi(int steps, int work_group_size) {
   float pi = 0;
   std::vector<float> stepsResult(steps, 0);
 
-  pi_taylor_step(steps, stepsResult);
+  pi_taylor_step(steps, stepsResult, work_group_size);
 
+  // acá podríamos volver a optimizar con una mejor suma.
   for (int i = 0; i < steps; i++) {
     pi += stepsResult[i];
   }
@@ -72,6 +81,6 @@ int main(int argc, const char *argv[]) {
     exit(1);
   }
 
-  tid_time t = time_ms(calcPi, steps);
+  tid_time t = time_ms(calcPi, steps, work_group_size);
   std::cout << "Tiempo tardado " << t.second << std::endl;
 }
